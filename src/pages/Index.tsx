@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Icon from '@/components/ui/icon';
 
 const HERO_IMG = 'https://cdn.poehali.dev/projects/532c82be-16bd-4878-ab03-bbb048fc4910/files/85ce58e2-bc80-4821-8436-2aee169f80b0.jpg';
@@ -80,7 +80,201 @@ const PROPERTIES = [
   },
 ];
 
-function GalleryModal({ onClose, initialIndex = 0 }: { onClose: () => void; initialIndex?: number }) {
+const BOT_SCRIPT = [
+  {
+    id: 'greeting',
+    from: 'bot',
+    text: 'Привет! 👋 Я Алина, ваш консультант по недвижимости на Северном Кипре. Чем могу помочь?',
+    options: ['Хочу переехать жить', 'Ищу инвестицию', 'Интересует ВНЖ', 'Просто смотрю'],
+  },
+  {
+    id: 'budget',
+    from: 'bot',
+    text: 'Отличный выбор! Какой бюджет рассматриваете?',
+    options: ['до $100 000', '$100 000 – $250 000', '$250 000 – $500 000', 'от $500 000'],
+  },
+  {
+    id: 'timeline',
+    from: 'bot',
+    text: 'Когда планируете переезд или покупку?',
+    options: ['В течение 3 месяцев', 'До конца года', 'В следующем году', 'Пока изучаю'],
+  },
+  {
+    id: 'contact',
+    from: 'bot',
+    text: 'Я подготовила персональную подборку для вас! 🎉 Оставьте номер телефона, и я пришлю её в WhatsApp в течение 15 минут.',
+    options: [],
+  },
+];
+
+function ChatBot({ onClose }: { onClose: () => void }) {
+  const [step, setStep] = useState(0);
+  const [messages, setMessages] = useState<{ from: 'bot' | 'user'; text: string }[]>([
+    { from: 'bot', text: BOT_SCRIPT[0].text },
+  ]);
+  const [phone, setPhone] = useState('');
+  const [done, setDone] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [onClose]);
+
+  const handleOption = (opt: string) => {
+    setMessages((prev) => [...prev, { from: 'user', text: opt }]);
+    const nextStep = step + 1;
+    setTimeout(() => {
+      if (nextStep < BOT_SCRIPT.length) {
+        setMessages((prev) => [...prev, { from: 'bot', text: BOT_SCRIPT[nextStep].text }]);
+        setStep(nextStep);
+      }
+    }, 600);
+  };
+
+  const handleSendPhone = () => {
+    if (!phone.trim()) return;
+    setMessages((prev) => [...prev, { from: 'user', text: phone }]);
+    setTimeout(() => {
+      setMessages((prev) => [...prev, {
+        from: 'bot',
+        text: 'Отлично! Алина свяжется с вами в течение 15 минут. До встречи на Кипре! 🌊',
+      }]);
+      setDone(true);
+    }, 700);
+  };
+
+  const currentOptions = BOT_SCRIPT[step]?.options ?? [];
+  const showOptions = !done && currentOptions.length > 0 && messages[messages.length - 1]?.from === 'bot';
+  const showInput = !done && step === BOT_SCRIPT.length - 1 && messages[messages.length - 1]?.from === 'bot';
+
+  return (
+    <div className="fixed bottom-24 right-5 z-50 w-80 md:w-96 rounded-3xl overflow-hidden animate-fade-up"
+      style={{ background: 'rgba(8,18,34,0.97)', border: '1px solid rgba(201,168,76,0.25)', boxShadow: '0 24px 80px rgba(0,0,0,0.6)' }}>
+      {/* header */}
+      <div className="flex items-center gap-3 px-5 py-4" style={{ background: 'rgba(201,168,76,0.08)', borderBottom: '1px solid rgba(201,168,76,0.15)' }}>
+        <div className="relative flex-shrink-0">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg" style={{ background: 'linear-gradient(135deg, #0f8a6a, #4abfbf)' }}>
+            👩‍💼
+          </div>
+          <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2" style={{ background: '#22c55e', borderColor: '#081222' }} />
+        </div>
+        <div className="flex-1">
+          <div className="font-golos font-semibold text-sm" style={{ color: 'rgba(240,230,200,0.95)' }}>Алина</div>
+          <div className="font-golos text-xs" style={{ color: '#4abfbf' }}>Консультант · онлайн</div>
+        </div>
+        <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:bg-white/10">
+          <Icon name="X" size={16} style={{ color: 'rgba(240,230,200,0.5)' }} />
+        </button>
+      </div>
+
+      {/* messages */}
+      <div className="px-4 py-4 space-y-3 overflow-y-auto" style={{ maxHeight: 320 }}>
+        {messages.map((msg, i) => (
+          <div key={i} className={`flex ${msg.from === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div className="max-w-[80%] px-4 py-2.5 rounded-2xl font-golos text-sm leading-relaxed"
+              style={msg.from === 'bot' ? {
+                background: 'rgba(255,255,255,0.07)',
+                color: 'rgba(240,230,200,0.85)',
+                borderBottomLeftRadius: 6,
+              } : {
+                background: 'linear-gradient(135deg, #c9a84c, #e8cc7a)',
+                color: '#0a1628',
+                fontWeight: 600,
+                borderBottomRightRadius: 6,
+              }}>
+              {msg.text}
+            </div>
+          </div>
+        ))}
+        <div ref={bottomRef} />
+      </div>
+
+      {/* options / input */}
+      <div className="px-4 pb-4">
+        {showOptions && (
+          <div className="flex flex-col gap-2 mt-1">
+            {currentOptions.map((opt) => (
+              <button key={opt} onClick={() => handleOption(opt)}
+                className="text-left px-4 py-2.5 rounded-xl font-golos text-sm transition-all hover:scale-[1.02]"
+                style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.25)', color: '#e8cc7a' }}>
+                {opt}
+              </button>
+            ))}
+          </div>
+        )}
+        {showInput && (
+          <div className="flex gap-2 mt-2">
+            <input value={phone} onChange={e => setPhone(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSendPhone()}
+              placeholder="+7 (999) 000-00-00"
+              className="flex-1 rounded-xl px-4 py-2.5 font-golos text-sm outline-none"
+              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(240,230,200,0.9)' }}
+            />
+            <button onClick={handleSendPhone}
+              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 btn-gold">
+              <Icon name="Send" size={16} style={{ color: '#0a1628' }} />
+            </button>
+          </div>
+        )}
+        {done && (
+          <button onClick={onClose}
+            className="btn-gold w-full py-3 rounded-2xl font-golos text-sm font-bold mt-2">
+            Отлично, спасибо! 🌴
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SuccessModal({ onClose, title = 'Заявка принята!', text = 'Наш консультант свяжется с вами в течение 15 минут.' }: {
+  onClose: () => void;
+  title?: string;
+  text?: string;
+}) {
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', h);
+    document.body.style.overflow = 'hidden';
+    return () => { window.removeEventListener('keydown', h); document.body.style.overflow = ''; };
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+      style={{ background: 'rgba(6,15,30,0.85)', backdropFilter: 'blur(16px)' }}
+      onClick={onClose}>
+      <div className="w-full max-w-sm rounded-3xl p-8 text-center animate-scale-in"
+        style={{ background: 'rgba(10,22,40,0.98)', border: '1px solid rgba(201,168,76,0.3)', boxShadow: '0 32px 80px rgba(0,0,0,0.6)' }}
+        onClick={e => e.stopPropagation()}>
+        <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 relative"
+          style={{ background: 'rgba(15,138,106,0.15)', border: '2px solid rgba(15,138,106,0.4)' }}>
+          <Icon name="CheckCheck" size={36} style={{ color: '#0f8a6a' }} />
+          <div className="absolute inset-0 rounded-full animate-ping opacity-20" style={{ background: '#0f8a6a' }} />
+        </div>
+        <h3 className="font-cormorant text-3xl font-semibold mb-3">{title}</h3>
+        <p className="font-golos text-sm mb-8 leading-relaxed" style={{ color: 'rgba(240,230,200,0.55)' }}>{text}</p>
+        <div className="flex items-center justify-center gap-3 mb-6 p-4 rounded-2xl" style={{ background: 'rgba(201,168,76,0.07)', border: '1px solid rgba(201,168,76,0.15)' }}>
+          <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg" style={{ background: 'linear-gradient(135deg, #0f8a6a, #4abfbf)' }}>👩‍💼</div>
+          <div className="text-left">
+            <div className="font-golos text-sm font-semibold" style={{ color: 'rgba(240,230,200,0.9)' }}>Алина</div>
+            <div className="font-golos text-xs" style={{ color: '#4abfbf' }}>Уже готовит подборку для вас</div>
+          </div>
+        </div>
+        <button onClick={onClose} className="btn-gold w-full py-3.5 rounded-2xl font-golos font-bold">
+          Хорошо, спасибо!
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function GalleryModal({ onClose, initialIndex = 0, onSuccess }: { onClose: () => void; initialIndex?: number; onSuccess: () => void }) {
   const [active, setActive] = useState(initialIndex);
 
   const prev = useCallback(() => setActive((i) => (i - 1 + PROPERTIES.length) % PROPERTIES.length), []);
@@ -190,11 +384,11 @@ function GalleryModal({ onClose, initialIndex = 0 }: { onClose: () => void; init
                 ))}
               </div>
 
-              <button className="btn-gold w-full py-3.5 rounded-2xl font-golos font-bold flex items-center justify-center gap-2">
+              <button onClick={onSuccess} className="btn-gold w-full py-3.5 rounded-2xl font-golos font-bold flex items-center justify-center gap-2">
                 <Icon name="MessageCircle" size={18} />
                 Узнать подробнее
               </button>
-              <button className="btn-outline-gold w-full py-3.5 rounded-2xl font-golos font-semibold flex items-center justify-center gap-2">
+              <button onClick={onSuccess} className="btn-outline-gold w-full py-3.5 rounded-2xl font-golos font-semibold flex items-center justify-center gap-2">
                 <Icon name="Phone" size={16} />
                 Записаться на просмотр
               </button>
@@ -294,7 +488,7 @@ function useScrollReveal() {
   }, []);
 }
 
-function NavBar({ onOpenGallery }: { onOpenGallery: () => void }) {
+function NavBar({ onOpenGallery, onContact }: { onOpenGallery: () => void; onContact: () => void }) {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 50);
@@ -339,7 +533,7 @@ function NavBar({ onOpenGallery }: { onOpenGallery: () => void }) {
             Объекты
           </button>
         </div>
-        <button className="btn-gold px-5 py-2.5 rounded-full font-golos text-sm font-bold">
+        <button onClick={onContact} className="btn-gold px-5 py-2.5 rounded-full font-golos text-sm font-bold">
           Консультация
         </button>
       </div>
@@ -503,7 +697,7 @@ function BenefitsSection() {
   );
 }
 
-function QuizSection() {
+function QuizSection({ onSuccess }: { onSuccess: () => void }) {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -587,7 +781,7 @@ function QuizSection() {
                   className="flex-1 rounded-xl px-4 py-3 font-golos text-sm outline-none"
                   style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(240,230,200,0.9)' }}
                 />
-                <button className="btn-gold px-6 py-3 rounded-xl font-golos text-sm font-bold whitespace-nowrap">
+                <button onClick={onSuccess} className="btn-gold px-6 py-3 rounded-xl font-golos text-sm font-bold whitespace-nowrap">
                   Получить
                 </button>
               </div>
@@ -603,7 +797,7 @@ function QuizSection() {
   );
 }
 
-function CalculatorSection() {
+function CalculatorSection({ onSuccess }: { onSuccess: () => void }) {
   const [budget, setBudget] = useState(150);
   const [people, setPeople] = useState(2);
   const [hasKids, setHasKids] = useState(false);
@@ -706,7 +900,7 @@ function CalculatorSection() {
                 <span className="font-golos text-xs" style={{ color: 'rgba(240,230,200,0.35)' }}>Всего под ключ</span>
                 <span className="font-golos text-sm font-semibold" style={{ color: 'rgba(240,230,200,0.65)' }}>${fmt(propertyBudget + total)}</span>
               </div>
-              <button className="btn-gold w-full py-4 rounded-2xl font-golos text-base font-bold flex items-center justify-center gap-3">
+              <button onClick={onSuccess} className="btn-gold w-full py-4 rounded-2xl font-golos text-base font-bold flex items-center justify-center gap-3">
                 <Icon name="MessageCircle" size={20} />
                 Получить точный расчёт
               </button>
@@ -935,7 +1129,7 @@ function PortfolioSection({ onOpenGallery }: { onOpenGallery: (idx: number) => v
   );
 }
 
-function CTASection() {
+function CTASection({ onSuccess }: { onSuccess: () => void }) {
   return (
     <section className="py-28 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #0d2137 0%, #0a1628 100%)' }}>
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ opacity: 0.04 }}>
@@ -962,7 +1156,7 @@ function CTASection() {
             className="flex-1 rounded-2xl px-5 py-4 font-golos text-sm outline-none"
             style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(240,230,200,0.9)' }}
           />
-          <button className="btn-gold px-8 py-4 rounded-2xl font-golos text-base font-bold whitespace-nowrap">
+          <button onClick={onSuccess} className="btn-gold px-8 py-4 rounded-2xl font-golos text-base font-bold whitespace-nowrap">
             Перезвоните мне
           </button>
         </div>
@@ -1004,23 +1198,51 @@ export default function Index() {
   useScrollReveal();
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
+  const [successOpen, setSuccessOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatPulsed, setChatPulsed] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setChatPulsed(true), 8000);
+    return () => clearTimeout(t);
+  }, []);
 
   const openGallery = (idx = 0) => {
     setGalleryIndex(idx);
     setGalleryOpen(true);
   };
 
+  const openSuccess = () => {
+    setSuccessOpen(true);
+  };
+
   return (
     <div className="min-h-screen font-golos" style={{ background: '#0a1628' }}>
-      {galleryOpen && <GalleryModal onClose={() => setGalleryOpen(false)} initialIndex={galleryIndex} />}
-      <NavBar onOpenGallery={() => openGallery(0)} />
+      {successOpen && <SuccessModal onClose={() => setSuccessOpen(false)} />}
+      {galleryOpen && <GalleryModal onClose={() => setGalleryOpen(false)} initialIndex={galleryIndex} onSuccess={() => { setGalleryOpen(false); openSuccess(); }} />}
+
+      {/* Chat widget */}
+      {chatOpen && <ChatBot onClose={() => setChatOpen(false)} />}
+      <button
+        onClick={() => { setChatOpen(!chatOpen); setChatPulsed(false); }}
+        className="fixed bottom-5 right-5 z-50 w-14 h-14 rounded-full flex items-center justify-center transition-all hover:scale-110"
+        style={{ background: 'linear-gradient(135deg, #c9a84c, #e8cc7a)', boxShadow: '0 8px 32px rgba(201,168,76,0.5)' }}
+      >
+        <Icon name={chatOpen ? 'X' : 'MessageCircle'} size={24} style={{ color: '#0a1628' }} />
+        {chatPulsed && !chatOpen && (
+          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center font-golos text-xs font-bold animate-bounce"
+            style={{ background: '#ef4444', color: '#fff' }}>1</span>
+        )}
+      </button>
+
+      <NavBar onOpenGallery={() => openGallery(0)} onContact={openSuccess} />
       <HeroSection onOpenGallery={() => openGallery(0)} />
       <BenefitsSection />
-      <QuizSection />
-      <CalculatorSection />
+      <QuizSection onSuccess={openSuccess} />
+      <CalculatorSection onSuccess={openSuccess} />
       <ApartmentSection onOpenGallery={() => openGallery(0)} />
       <PortfolioSection onOpenGallery={openGallery} />
-      <CTASection />
+      <CTASection onSuccess={openSuccess} />
       <Footer />
     </div>
   );
