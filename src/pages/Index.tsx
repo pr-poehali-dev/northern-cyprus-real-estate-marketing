@@ -60,10 +60,28 @@ const PROPERTIES = [
     tag: '🌿 Для семьи',
     beds: 3, baths: 2, area: 140,
   },
+  {
+    id: 7,
+    img: 'https://cdn.poehali.dev/projects/532c82be-16bd-4878-ab03-bbb048fc4910/files/36f15c2f-b80f-4742-88b3-cbbb71e8962b.jpg',
+    title: 'Вилла на берегу Фамагусты',
+    location: 'Фамагуста, 1-я линия',
+    price: '$580 000',
+    tag: '🌊 Пляж у порога',
+    beds: 5, baths: 4, area: 320,
+  },
+  {
+    id: 8,
+    img: 'https://cdn.poehali.dev/projects/532c82be-16bd-4878-ab03-bbb048fc4910/files/06604ffe-b1ad-411b-b607-7423b5cfaab6.jpg',
+    title: 'Апарт-комплекс Hill View',
+    location: 'Кирения, холмы над морем',
+    price: 'от $110 000',
+    tag: '🏗️ Сдача 2025',
+    beds: 2, baths: 1, area: 78,
+  },
 ];
 
-function GalleryModal({ onClose }: { onClose: () => void }) {
-  const [active, setActive] = useState(0);
+function GalleryModal({ onClose, initialIndex = 0 }: { onClose: () => void; initialIndex?: number }) {
+  const [active, setActive] = useState(initialIndex);
 
   const prev = useCallback(() => setActive((i) => (i - 1 + PROPERTIES.length) % PROPERTIES.length), []);
   const next = useCallback(() => setActive((i) => (i + 1) % PROPERTIES.length), []);
@@ -312,7 +330,9 @@ function NavBar({ onOpenGallery }: { onOpenGallery: () => void }) {
               {item}
             </a>
           ))}
-          <button onClick={onOpenGallery} className="font-golos text-sm transition-colors" style={{ color: 'rgba(240,230,200,0.65)' }}
+          <button
+            onClick={() => document.getElementById('portfolio')?.scrollIntoView({ behavior: 'smooth' })}
+            className="font-golos text-sm transition-colors" style={{ color: 'rgba(240,230,200,0.65)' }}
             onMouseEnter={e => (e.currentTarget.style.color = '#e8cc7a')}
             onMouseLeave={e => (e.currentTarget.style.color = 'rgba(240,230,200,0.65)')}
           >
@@ -751,6 +771,170 @@ function ApartmentSection({ onOpenGallery }: { onOpenGallery: () => void }) {
   );
 }
 
+const FILTERS = ['Все', 'Виллы', 'Апартаменты', 'Студии', 'Инвестиции'];
+
+const PROPERTY_CATEGORIES: Record<number, string> = {
+  1: 'Виллы', 2: 'Апартаменты', 3: 'Инвестиции',
+  4: 'Студии', 5: 'Апартаменты', 6: 'Апартаменты',
+  7: 'Виллы', 8: 'Инвестиции',
+};
+
+function PortfolioSection({ onOpenGallery }: { onOpenGallery: (idx: number) => void }) {
+  const [filter, setFilter] = useState('Все');
+  const [hovered, setHovered] = useState<number | null>(null);
+
+  const filtered = PROPERTIES.filter(
+    (p) => filter === 'Все' || PROPERTY_CATEGORIES[p.id] === filter
+  );
+
+  return (
+    <section id="portfolio" className="py-28" style={{ background: 'linear-gradient(180deg, #0a1628 0%, #0b1b30 100%)' }}>
+      <div className="max-w-7xl mx-auto px-6">
+
+        {/* header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-14 scroll-reveal">
+          <div>
+            <span className="font-golos text-sm tracking-widest uppercase" style={{ color: '#4abfbf' }}>Портфолио</span>
+            <h2 className="font-cormorant text-4xl md:text-5xl font-light mt-3">
+              Наши <span className="text-gradient-gold">объекты</span>
+            </h2>
+          </div>
+          {/* filter tabs */}
+          <div className="flex flex-wrap gap-2">
+            {FILTERS.map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className="px-4 py-2 rounded-full font-golos text-sm font-medium transition-all"
+                style={filter === f ? {
+                  background: 'linear-gradient(135deg, #c9a84c, #e8cc7a)',
+                  color: '#0a1628',
+                  boxShadow: '0 4px 16px rgba(201,168,76,0.4)',
+                } : {
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  color: 'rgba(240,230,200,0.55)',
+                }}
+              >{f}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          {filtered.map((prop, i) => (
+            <div
+              key={prop.id}
+              className="scroll-reveal group cursor-pointer rounded-3xl overflow-hidden"
+              style={{
+                background: 'rgba(10,22,40,0.8)',
+                border: hovered === prop.id ? '1px solid rgba(201,168,76,0.5)' : '1px solid rgba(255,255,255,0.07)',
+                transform: hovered === prop.id ? 'translateY(-6px)' : 'translateY(0)',
+                transition: 'all 0.3s ease',
+                transitionDelay: `${(i % 4) * 0.06}s`,
+                boxShadow: hovered === prop.id ? '0 20px 48px rgba(0,0,0,0.4)' : 'none',
+              }}
+              onMouseEnter={() => setHovered(prop.id)}
+              onMouseLeave={() => setHovered(null)}
+              onClick={() => onOpenGallery(prop.id - 1)}
+            >
+              {/* image */}
+              <div className="relative overflow-hidden" style={{ height: 220 }}>
+                <img
+                  src={prop.img}
+                  alt={prop.title}
+                  className="w-full h-full object-cover transition-transform duration-700"
+                  style={{ transform: hovered === prop.id ? 'scale(1.08)' : 'scale(1)' }}
+                />
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(10,22,40,0.8) 0%, transparent 60%)' }} />
+
+                {/* tag */}
+                <div className="absolute top-3 left-3 px-3 py-1 rounded-full font-golos text-xs font-semibold"
+                  style={{ background: 'rgba(10,22,40,0.85)', backdropFilter: 'blur(8px)', border: '1px solid rgba(201,168,76,0.35)', color: '#e8cc7a' }}>
+                  {prop.tag}
+                </div>
+
+                {/* category badge */}
+                <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full font-golos text-xs"
+                  style={{ background: 'rgba(74,191,191,0.15)', border: '1px solid rgba(74,191,191,0.3)', color: '#7dd9d9' }}>
+                  {PROPERTY_CATEGORIES[prop.id]}
+                </div>
+
+                {/* hover overlay */}
+                <div className="absolute inset-0 flex items-center justify-center transition-opacity duration-300"
+                  style={{ opacity: hovered === prop.id ? 1 : 0, background: 'rgba(10,22,40,0.4)' }}>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center"
+                    style={{ background: 'rgba(201,168,76,0.9)', backdropFilter: 'blur(8px)' }}>
+                    <Icon name="Expand" size={20} style={{ color: '#0a1628' }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* info */}
+              <div className="p-5">
+                <h3 className="font-cormorant text-xl font-semibold mb-1" style={{ color: 'rgba(240,230,200,0.95)' }}>{prop.title}</h3>
+                <div className="flex items-center gap-1.5 mb-4">
+                  <Icon name="MapPin" size={12} style={{ color: '#c9a84c' }} />
+                  <span className="font-golos text-xs" style={{ color: 'rgba(240,230,200,0.45)' }}>{prop.location}</span>
+                </div>
+
+                {/* specs row */}
+                <div className="flex items-center gap-4 mb-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 14 }}>
+                  {prop.beds > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <Icon name="BedDouble" size={13} style={{ color: 'rgba(240,230,200,0.4)' }} />
+                      <span className="font-golos text-xs" style={{ color: 'rgba(240,230,200,0.5)' }}>{prop.beds} сп.</span>
+                    </div>
+                  )}
+                  {prop.beds === 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <Icon name="Home" size={13} style={{ color: 'rgba(240,230,200,0.4)' }} />
+                      <span className="font-golos text-xs" style={{ color: 'rgba(240,230,200,0.5)' }}>Студия</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1.5">
+                    <Icon name="Bath" size={13} style={{ color: 'rgba(240,230,200,0.4)' }} />
+                    <span className="font-golos text-xs" style={{ color: 'rgba(240,230,200,0.5)' }}>{prop.baths} с/у</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Icon name="Maximize2" size={13} style={{ color: 'rgba(240,230,200,0.4)' }} />
+                    <span className="font-golos text-xs" style={{ color: 'rgba(240,230,200,0.5)' }}>{prop.area} м²</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="font-cormorant text-2xl font-semibold text-gradient-gold">{prop.price}</span>
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center transition-all"
+                    style={{
+                      background: hovered === prop.id ? 'rgba(201,168,76,0.2)' : 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(201,168,76,0.3)',
+                    }}>
+                    <Icon name="ArrowRight" size={15} style={{ color: '#c9a84c' }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* bottom cta */}
+        <div className="text-center mt-14 scroll-reveal">
+          <p className="font-golos mb-5" style={{ color: 'rgba(240,230,200,0.45)' }}>
+            Показаны актуальные объекты. Новые поступают еженедельно.
+          </p>
+          <button
+            onClick={() => onOpenGallery(0)}
+            className="btn-outline-gold px-8 py-4 rounded-2xl font-golos text-base font-semibold inline-flex items-center gap-3"
+          >
+            <Icon name="LayoutGrid" size={18} />
+            Открыть все в галерее
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function CTASection() {
   return (
     <section className="py-28 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #0d2137 0%, #0a1628 100%)' }}>
@@ -819,16 +1003,23 @@ function Footer() {
 export default function Index() {
   useScrollReveal();
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const [galleryIndex, setGalleryIndex] = useState(0);
+
+  const openGallery = (idx = 0) => {
+    setGalleryIndex(idx);
+    setGalleryOpen(true);
+  };
 
   return (
     <div className="min-h-screen font-golos" style={{ background: '#0a1628' }}>
-      {galleryOpen && <GalleryModal onClose={() => setGalleryOpen(false)} />}
-      <NavBar onOpenGallery={() => setGalleryOpen(true)} />
-      <HeroSection onOpenGallery={() => setGalleryOpen(true)} />
+      {galleryOpen && <GalleryModal onClose={() => setGalleryOpen(false)} initialIndex={galleryIndex} />}
+      <NavBar onOpenGallery={() => openGallery(0)} />
+      <HeroSection onOpenGallery={() => openGallery(0)} />
       <BenefitsSection />
       <QuizSection />
       <CalculatorSection />
-      <ApartmentSection onOpenGallery={() => setGalleryOpen(true)} />
+      <ApartmentSection onOpenGallery={() => openGallery(0)} />
+      <PortfolioSection onOpenGallery={openGallery} />
       <CTASection />
       <Footer />
     </div>
