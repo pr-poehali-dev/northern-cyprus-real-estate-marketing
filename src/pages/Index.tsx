@@ -1,9 +1,206 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Icon from '@/components/ui/icon';
 
 const HERO_IMG = 'https://cdn.poehali.dev/projects/532c82be-16bd-4878-ab03-bbb048fc4910/files/85ce58e2-bc80-4821-8436-2aee169f80b0.jpg';
 const APARTMENT_IMG = 'https://cdn.poehali.dev/projects/532c82be-16bd-4878-ab03-bbb048fc4910/files/0ee2b244-e093-4610-9b92-835f98bb74e1.jpg';
 const FAMILY_IMG = 'https://cdn.poehali.dev/projects/532c82be-16bd-4878-ab03-bbb048fc4910/files/127072f3-5645-4baa-9c46-7d81e129643c.jpg';
+
+const PROPERTIES = [
+  {
+    id: 1,
+    img: 'https://cdn.poehali.dev/projects/532c82be-16bd-4878-ab03-bbb048fc4910/files/dd751202-21f4-4548-b217-f72b6abc2dc0.jpg',
+    title: 'Вилла с бассейном',
+    location: 'Кирения, 1-я линия',
+    price: '$420 000',
+    tag: '🏖️ Море рядом',
+    beds: 4, baths: 3, area: 210,
+  },
+  {
+    id: 2,
+    img: 'https://cdn.poehali.dev/projects/532c82be-16bd-4878-ab03-bbb048fc4910/files/972b55ec-d511-4798-a6cd-15b8c713f238.jpg',
+    title: 'Апартаменты 2+1',
+    location: 'Лапта, панорамный вид',
+    price: '$165 000',
+    tag: '📈 Хит продаж',
+    beds: 2, baths: 2, area: 95,
+  },
+  {
+    id: 3,
+    img: 'https://cdn.poehali.dev/projects/532c82be-16bd-4878-ab03-bbb048fc4910/files/28c597f7-4704-43a6-bdae-3bbc4bec92a0.jpg',
+    title: 'Комплекс Seaside Residences',
+    location: 'Искеле, новый комплекс',
+    price: 'от $95 000',
+    tag: '🔑 Сдача 2026',
+    beds: 1, baths: 1, area: 55,
+  },
+  {
+    id: 4,
+    img: 'https://cdn.poehali.dev/projects/532c82be-16bd-4878-ab03-bbb048fc4910/files/1d0a18bc-8bd5-449f-bffa-43cda141434e.jpg',
+    title: 'Студия с видом на море',
+    location: 'Алсанджак, центр',
+    price: '$82 000',
+    tag: '💵 Старт от $20k',
+    beds: 0, baths: 1, area: 42,
+  },
+  {
+    id: 5,
+    img: 'https://cdn.poehali.dev/projects/532c82be-16bd-4878-ab03-bbb048fc4910/files/061cb1e5-6207-4841-ad21-371fd7ad1235.jpg',
+    title: 'Пентхаус с террасой',
+    location: 'Кирения, пентхаус',
+    price: '$310 000',
+    tag: '👑 Премиум',
+    beds: 3, baths: 2, area: 175,
+  },
+  {
+    id: 6,
+    img: 'https://cdn.poehali.dev/projects/532c82be-16bd-4878-ab03-bbb048fc4910/files/e6f3bf9d-980c-4335-ba9a-1cc327a607dc.jpg',
+    title: 'Таунхаус в закрытом посёлке',
+    location: 'Белапаис, горы и море',
+    price: '$195 000',
+    tag: '🌿 Для семьи',
+    beds: 3, baths: 2, area: 140,
+  },
+];
+
+function GalleryModal({ onClose }: { onClose: () => void }) {
+  const [active, setActive] = useState(0);
+
+  const prev = useCallback(() => setActive((i) => (i - 1 + PROPERTIES.length) % PROPERTIES.length), []);
+  const next = useCallback(() => setActive((i) => (i + 1) % PROPERTIES.length), []);
+
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'ArrowLeft') prev();
+      if (e.key === 'ArrowRight') next();
+    };
+    window.addEventListener('keydown', h);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', h);
+      document.body.style.overflow = '';
+    };
+  }, [onClose, prev, next]);
+
+  const prop = PROPERTIES[active];
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      style={{ background: 'rgba(6,15,30,0.96)', backdropFilter: 'blur(24px)' }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-6xl rounded-3xl overflow-hidden animate-scale-in"
+        style={{ background: 'rgba(10,22,40,0.95)', border: '1px solid rgba(201,168,76,0.2)', maxHeight: '92vh' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex flex-col lg:flex-row h-full" style={{ maxHeight: '92vh' }}>
+          {/* LEFT — big image */}
+          <div className="relative lg:w-3/5 flex-shrink-0" style={{ minHeight: 320 }}>
+            <img
+              src={prop.img}
+              alt={prop.title}
+              className="w-full h-full object-cover transition-all duration-500"
+              style={{ height: '100%', minHeight: 320, maxHeight: 560 }}
+            />
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(6,15,30,0.7) 0%, transparent 50%)' }} />
+
+            {/* nav arrows */}
+            <button onClick={prev}
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center transition-all hover:scale-110"
+              style={{ background: 'rgba(10,22,40,0.75)', backdropFilter: 'blur(8px)', border: '1px solid rgba(201,168,76,0.3)' }}>
+              <Icon name="ChevronLeft" size={20} style={{ color: '#e8cc7a' }} />
+            </button>
+            <button onClick={next}
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center transition-all hover:scale-110"
+              style={{ background: 'rgba(10,22,40,0.75)', backdropFilter: 'blur(8px)', border: '1px solid rgba(201,168,76,0.3)' }}>
+              <Icon name="ChevronRight" size={20} style={{ color: '#e8cc7a' }} />
+            </button>
+
+            {/* tag */}
+            <div className="absolute top-5 left-5 px-3 py-1.5 rounded-full font-golos text-sm font-semibold"
+              style={{ background: 'rgba(10,22,40,0.85)', backdropFilter: 'blur(8px)', border: '1px solid rgba(201,168,76,0.4)', color: '#e8cc7a' }}>
+              {prop.tag}
+            </div>
+
+            {/* dots */}
+            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2">
+              {PROPERTIES.map((_, i) => (
+                <button key={i} onClick={() => setActive(i)}
+                  className="rounded-full transition-all"
+                  style={{ width: i === active ? 20 : 8, height: 8, background: i === active ? '#c9a84c' : 'rgba(255,255,255,0.35)' }}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* RIGHT — info + list */}
+          <div className="lg:w-2/5 flex flex-col overflow-y-auto">
+            {/* close */}
+            <div className="flex justify-between items-start p-6 pb-0 flex-shrink-0">
+              <div>
+                <span className="font-golos text-xs tracking-widest uppercase" style={{ color: '#4abfbf' }}>Объект #{prop.id}</span>
+                <h3 className="font-cormorant text-3xl font-semibold mt-1">{prop.title}</h3>
+                <div className="flex items-center gap-2 mt-2">
+                  <Icon name="MapPin" size={13} style={{ color: '#c9a84c' }} />
+                  <span className="font-golos text-sm" style={{ color: 'rgba(240,230,200,0.55)' }}>{prop.location}</span>
+                </div>
+              </div>
+              <button onClick={onClose}
+                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-110"
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <Icon name="X" size={18} style={{ color: 'rgba(240,230,200,0.6)' }} />
+              </button>
+            </div>
+
+            <div className="p-6 flex-1 flex flex-col gap-5">
+              <div className="text-gradient-gold font-cormorant text-4xl font-semibold">{prop.price}</div>
+
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { icon: 'BedDouble', val: prop.beds === 0 ? 'Студия' : `${prop.beds} сп.`, label: 'Спальни' },
+                  { icon: 'Bath', val: `${prop.baths}`, label: 'Санузлы' },
+                  { icon: 'Maximize2', val: `${prop.area} м²`, label: 'Площадь' },
+                ].map((s) => (
+                  <div key={s.label} className="rounded-2xl p-3 text-center"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <Icon name={s.icon} size={16} style={{ color: '#c9a84c', margin: '0 auto 6px' }} />
+                    <div className="font-golos text-sm font-semibold" style={{ color: 'rgba(240,230,200,0.9)' }}>{s.val}</div>
+                    <div className="font-golos text-xs" style={{ color: 'rgba(240,230,200,0.35)' }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              <button className="btn-gold w-full py-3.5 rounded-2xl font-golos font-bold flex items-center justify-center gap-2">
+                <Icon name="MessageCircle" size={18} />
+                Узнать подробнее
+              </button>
+              <button className="btn-outline-gold w-full py-3.5 rounded-2xl font-golos font-semibold flex items-center justify-center gap-2">
+                <Icon name="Phone" size={16} />
+                Записаться на просмотр
+              </button>
+
+              {/* thumbnail strip */}
+              <div className="mt-auto">
+                <div className="font-golos text-xs mb-3 tracking-wide uppercase" style={{ color: 'rgba(240,230,200,0.3)' }}>Все объекты</div>
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {PROPERTIES.map((p, i) => (
+                    <button key={p.id} onClick={() => setActive(i)}
+                      className="flex-shrink-0 rounded-xl overflow-hidden transition-all"
+                      style={{ width: 64, height: 48, outline: i === active ? '2px solid #c9a84c' : '2px solid transparent', outlineOffset: 2 }}>
+                      <img src={p.img} alt={p.title} className="w-full h-full object-cover" style={{ opacity: i === active ? 1 : 0.5 }} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const QUIZ_STEPS = [
   {
@@ -79,7 +276,7 @@ function useScrollReveal() {
   }, []);
 }
 
-function NavBar() {
+function NavBar({ onOpenGallery }: { onOpenGallery: () => void }) {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 50);
@@ -107,7 +304,7 @@ function NavBar() {
           </span>
         </div>
         <div className="hidden md:flex items-center gap-8">
-          {['Услуги', 'Объекты', 'О нас', 'Контакты'].map((item) => (
+          {['Услуги', 'О нас', 'Контакты'].map((item) => (
             <a key={item} href="#" className="font-golos text-sm transition-colors" style={{ color: 'rgba(240,230,200,0.65)' }}
               onMouseEnter={e => (e.currentTarget.style.color = '#e8cc7a')}
               onMouseLeave={e => (e.currentTarget.style.color = 'rgba(240,230,200,0.65)')}
@@ -115,6 +312,12 @@ function NavBar() {
               {item}
             </a>
           ))}
+          <button onClick={onOpenGallery} className="font-golos text-sm transition-colors" style={{ color: 'rgba(240,230,200,0.65)' }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#e8cc7a')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(240,230,200,0.65)')}
+          >
+            Объекты
+          </button>
         </div>
         <button className="btn-gold px-5 py-2.5 rounded-full font-golos text-sm font-bold">
           Консультация
@@ -124,7 +327,7 @@ function NavBar() {
   );
 }
 
-function HeroSection() {
+function HeroSection({ onOpenGallery }: { onOpenGallery: () => void }) {
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden" style={{
       background: 'radial-gradient(ellipse at 20% 50%, rgba(15,138,106,0.18) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(74,191,191,0.14) 0%, transparent 50%), linear-gradient(180deg, #0a1628 0%, #0d2137 100%)'
@@ -165,7 +368,7 @@ function HeroSection() {
             </button>
             <button
               className="btn-outline-gold px-8 py-4 rounded-2xl font-golos text-base font-semibold flex items-center justify-center gap-3"
-              onClick={() => document.getElementById('calculator')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={onOpenGallery}
             >
               <Icon name="Play" size={18} />
               Смотреть объекты
@@ -496,7 +699,7 @@ function CalculatorSection() {
   );
 }
 
-function ApartmentSection() {
+function ApartmentSection({ onOpenGallery }: { onOpenGallery: () => void }) {
   return (
     <section className="py-28" style={{ background: 'linear-gradient(180deg, #0c1f38 0%, #0a1628 100%)' }}>
       <div className="max-w-7xl mx-auto px-6">
@@ -537,7 +740,7 @@ function ApartmentSection() {
                 </div>
               ))}
             </div>
-            <button className="btn-gold px-8 py-4 rounded-2xl font-golos text-base font-bold flex items-center gap-3">
+            <button onClick={onOpenGallery} className="btn-gold px-8 py-4 rounded-2xl font-golos text-base font-bold flex items-center gap-3">
               <Icon name="Building2" size={20} />
               Смотреть объекты
             </button>
@@ -615,15 +818,17 @@ function Footer() {
 
 export default function Index() {
   useScrollReveal();
+  const [galleryOpen, setGalleryOpen] = useState(false);
 
   return (
     <div className="min-h-screen font-golos" style={{ background: '#0a1628' }}>
-      <NavBar />
-      <HeroSection />
+      {galleryOpen && <GalleryModal onClose={() => setGalleryOpen(false)} />}
+      <NavBar onOpenGallery={() => setGalleryOpen(true)} />
+      <HeroSection onOpenGallery={() => setGalleryOpen(true)} />
       <BenefitsSection />
       <QuizSection />
       <CalculatorSection />
-      <ApartmentSection />
+      <ApartmentSection onOpenGallery={() => setGalleryOpen(true)} />
       <CTASection />
       <Footer />
     </div>
